@@ -11,7 +11,6 @@ import torch
 from diffusers import StableDiffusionPipeline
 from huggingface_hub import login
 from PIL import Image
-from IPython.display import display
 
 login()
 
@@ -34,7 +33,7 @@ result = pipe(prompt)
 image = result.images[0]
 
 # Show the result
-display(image)
+st.image(image, caption="Generated Image", use_column_width=True)
 
 # Save it if you like
 image.save("stable_diffusion_image.png")
