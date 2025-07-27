@@ -10,20 +10,16 @@ Original file is located at
 
 
 import torch
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionPipeline, EulerDiscreteScheduler
 import os
 from huggingface_hub import login
-import getpass
 from PIL import Image
-#from IPython.display import display
 import streamlit as st
 import types
 
+
 hf_token = os.getenv("HF_TOKEN")
 login(token=hf_token)
-
-import torch
-from diffusers import StableDiffusionPipeline
 
 @st.cache_resource
 def load_pipeline():
@@ -31,28 +27,32 @@ def load_pipeline():
     pipe = StableDiffusionPipeline.from_pretrained(
         "runwayml/stable-diffusion-v1-5",
         torch_dtype=torch.float16 if device == "cuda" else torch.float32
-    ).to(device)
+    )
+    
+   
+    pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
+    pipe = pipe.to(device)
     pipe.enable_attention_slicing()
-    return pipe, device
-
-pipe, device = load_pipeline()
-
-
-st.title("🎨 Text-to-Image Generator")
-prompt = st.text_input("Enter your prompt:", "A dreamy forest landscape with glowing magical lights and soft mist")
-
-if st.button("Generate"):
+    
     original_get_prev_sample = pipe.scheduler._get_prev_sample
     def safe_get_prev_sample(self, sample, timestep, prev_timestep, model_output):
         max_index = len(self.alphas_cumprod) - 1
         safe_timestep = min(max(timestep, 0), max_index)
         safe_prev_timestep = min(max(prev_timestep, 0), max_index)
         return original_get_prev_sample(sample, safe_timestep, safe_prev_timestep, model_output)
-        pipe.scheduler._get_prev_sample = types.MethodType(safe_get_prev_sample, pipe.scheduler)
 
-with st.spinner("Generating image..."):
-    result = pipe(prompt) 
-    st.image(result.images[0]) 
-image = result.images[0]
-st.image(image, caption="Generated Image", use_column_width=True)
-image.save("image.png")
+    pipe.scheduler._get_prev_sample = types.MethodType(safe_get_prev_sample, pipe.scheduler)
+
+    return pipe, device
+
+pipe, device = load_pipeline()
+
+st.title("🎨 Text-to-Image Generator")
+prompt = st.text_input("Enter your prompt:", "A dreamy forest landscape with glowing magical lights and soft mist")
+
+if st.button("Generate"):
+    with st.spinner("Generating image..."):
+        result = pipe(prompt, num_inference_steps=25, guidance_scale=7.5)
+        image = result.images[0]
+        st.image(image, caption="Generated Image", use_column_width=True)
+        image.save("image.png")
