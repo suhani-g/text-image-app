@@ -14,7 +14,8 @@ from diffusers import StableDiffusionPipeline
 from huggingface_hub import login
 import getpass
 from PIL import Image
-from IPython.display import display
+#from IPython.display import display
+import streamlit as st
 
 hf_token = getpass.getpass("Enter your Hugging Face token: ")
 
@@ -39,7 +40,7 @@ result = pipe(prompt)
 image = result.images[0]
 
 # Show the result
-display(image)
+st.image(image, caption="Generated Image")
 
 # Save it if you like
 image.save("stable_diffusion_image.png")
