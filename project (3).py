@@ -11,15 +11,15 @@ Original file is located at
 
 import torch
 from diffusers import StableDiffusionPipeline
+import os
 from huggingface_hub import login
 import getpass
 from PIL import Image
 #from IPython.display import display
 import streamlit as st
 
-hf_token = getpass.getpass("Enter your Hugging Face token: ")
-
-login(hf_token)
+hf_token = os.getenv("HF_TOKEN")
+login(token=hf_token)
 
 import torch
 from diffusers import StableDiffusionPipeline
