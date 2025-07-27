@@ -53,8 +53,6 @@ if st.button("Generate"):
 with st.spinner("Generating image..."):
     result = pipe(prompt) 
     st.image(result.images[0]) 
-
-        image = result.images[0]
-        st.image(image, caption="Generated Image", use_column_width=True)
-    
-        image.save("image.png")
+image = result.images[0]
+st.image(image, caption="Generated Image", use_column_width=True)
+image.save("image.png")
