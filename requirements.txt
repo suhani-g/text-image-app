@@ -5,3 +5,4 @@ torch
 Pillow
 safetensors
 huggingface_hub
+accelerate
