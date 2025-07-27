@@ -41,9 +41,10 @@ st.title("🎨 Text-to-Image Generator")
 prompt = st.text_input("Enter your prompt:", "A dreamy forest landscape with glowing magical lights and soft mist")
 
 if st.button("Generate"):
+    import types
+    
     with st.spinner("Generating image..."):
         # Monkey patch the scheduler to avoid out-of-bounds access
-import types
 
 original_get_prev_sample = pipe.scheduler._get_prev_sample
 
