@@ -17,6 +17,7 @@ import getpass
 from PIL import Image
 #from IPython.display import display
 import streamlit as st
+import types
 
 hf_token = os.getenv("HF_TOKEN")
 login(token=hf_token)
@@ -36,15 +37,11 @@ def load_pipeline():
 
 pipe, device = load_pipeline()
 
-# UI
+
 st.title("🎨 Text-to-Image Generator")
 prompt = st.text_input("Enter your prompt:", "A dreamy forest landscape with glowing magical lights and soft mist")
 
 if st.button("Generate"):
-    import types
-    
-    with st.spinner("Generating image..."):
-        # Monkey patch the scheduler to avoid out-of-bounds access
 
 original_get_prev_sample = pipe.scheduler._get_prev_sample
 
@@ -56,8 +53,11 @@ def safe_get_prev_sample(self, sample, timestep, prev_timestep, model_output):
 
 pipe.scheduler._get_prev_sample = types.MethodType(safe_get_prev_sample, pipe.scheduler)
 
-        result = pipe(prompt)
+with st.spinner("Generating image..."):
+    result = pipe(prompt) 
+    st.image(result.images[0]) 
+
         image = result.images[0]
         st.image(image, caption="Generated Image", use_column_width=True)
-        # Optionally save
+    
         image.save("image.png")
