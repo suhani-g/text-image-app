@@ -42,16 +42,13 @@ st.title("🎨 Text-to-Image Generator")
 prompt = st.text_input("Enter your prompt:", "A dreamy forest landscape with glowing magical lights and soft mist")
 
 if st.button("Generate"):
-
-original_get_prev_sample = pipe.scheduler._get_prev_sample
-
-def safe_get_prev_sample(self, sample, timestep, prev_timestep, model_output):
+    original_get_prev_sample = pipe.scheduler._get_prev_sample
+    def safe_get_prev_sample(self, sample, timestep, prev_timestep, model_output):
     max_index = len(self.alphas_cumprod) - 1
     safe_timestep = min(max(timestep, 0), max_index)
     safe_prev_timestep = min(max(prev_timestep, 0), max_index)
     return original_get_prev_sample(sample, safe_timestep, safe_prev_timestep, model_output)
-
-pipe.scheduler._get_prev_sample = types.MethodType(safe_get_prev_sample, pipe.scheduler)
+    pipe.scheduler._get_prev_sample = types.MethodType(safe_get_prev_sample, pipe.scheduler)
 
 with st.spinner("Generating image..."):
     result = pipe(prompt) 
