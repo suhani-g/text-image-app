@@ -47,8 +47,8 @@ if st.button("Generate"):
         max_index = len(self.alphas_cumprod) - 1
         safe_timestep = min(max(timestep, 0), max_index)
         safe_prev_timestep = min(max(prev_timestep, 0), max_index)
-    return original_get_prev_sample(sample, safe_timestep, safe_prev_timestep, model_output)
-    pipe.scheduler._get_prev_sample = types.MethodType(safe_get_prev_sample, pipe.scheduler)
+        return original_get_prev_sample(sample, safe_timestep, safe_prev_timestep, model_output)
+        pipe.scheduler._get_prev_sample = types.MethodType(safe_get_prev_sample, pipe.scheduler)
 
 with st.spinner("Generating image..."):
     result = pipe(prompt) 
