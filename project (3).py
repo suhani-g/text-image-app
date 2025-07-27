@@ -24,24 +24,26 @@ login(token=hf_token)
 import torch
 from diffusers import StableDiffusionPipeline
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"Using device: {device}")
+@st.cache_resource
+def load_pipeline():
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    pipe = StableDiffusionPipeline.from_pretrained(
+        "runwayml/stable-diffusion-v1-5",
+        torch_dtype=torch.float16 if device == "cuda" else torch.float32
+    ).to(device)
+    pipe.enable_attention_slicing()
+    return pipe, device
 
-pipe = StableDiffusionPipeline.from_pretrained(
-    "runwayml/stable-diffusion-v1-5",
-    torch_dtype=torch.float16 if device == "cuda" else torch.float32
-).to(device)
+pipe, device = load_pipeline()
 
-pipe.enable_attention_slicing()
+# UI
+st.title("🎨 Text-to-Image Generator")
+prompt = st.text_input("Enter your prompt:", "A dreamy forest landscape with glowing magical lights and soft mist")
 
-prompt = "A dreamy forest landscape with glowing magical lights and soft mist"
-
-result = pipe(prompt)
-image = result.images[0]
-
-# Show the result
-st.image(image, caption="Generated Image")
-
-# Save it if you like
-image.save("stable_diffusion_image.png")
-
+if st.button("Generate"):
+    with st.spinner("Generating image..."):
+        result = pipe(prompt)
+        image = result.images[0]
+        st.image(image, caption="Generated Image", use_column_width=True)
+        # Optionally save
+        image.save("image.png")
