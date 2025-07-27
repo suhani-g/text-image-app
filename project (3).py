@@ -9,32 +9,35 @@ Original file is located at
 
 
 
-import torch
-from diffusers import StableDiffusionPipeline, EulerDiscreteScheduler
 import os
-from huggingface_hub import login
-from PIL import Image
-import streamlit as st
+import torch
 import types
-
+import streamlit as st
+from PIL import Image
+from diffusers import StableDiffusionPipeline, EulerDiscreteScheduler
+from huggingface_hub import login
 
 hf_token = os.getenv("HF_TOKEN")
+if hf_token is None:
+    st.error("HF_TOKEN environment variable not set.")
+    st.stop()
 login(token=hf_token)
 
 @st.cache_resource
 def load_pipeline():
     device = "cuda" if torch.cuda.is_available() else "cpu"
+
     pipe = StableDiffusionPipeline.from_pretrained(
         "runwayml/stable-diffusion-v1-5",
         torch_dtype=torch.float16 if device == "cuda" else torch.float32
     )
-    
-   
+
     pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
     pipe = pipe.to(device)
     pipe.enable_attention_slicing()
-    
+
     original_get_prev_sample = pipe.scheduler._get_prev_sample
+
     def safe_get_prev_sample(self, sample, timestep, prev_timestep, model_output):
         max_index = len(self.alphas_cumprod) - 1
         safe_timestep = min(max(timestep, 0), max_index)
@@ -42,17 +45,20 @@ def load_pipeline():
         return original_get_prev_sample(sample, safe_timestep, safe_prev_timestep, model_output)
 
     pipe.scheduler._get_prev_sample = types.MethodType(safe_get_prev_sample, pipe.scheduler)
+    return pipe
 
-    return pipe, device
-
-pipe, device = load_pipeline()
+pipe = load_pipeline()
 
 st.title("🎨 Text-to-Image Generator")
 prompt = st.text_input("Enter your prompt:", "A dreamy forest landscape with glowing magical lights and soft mist")
 
 if st.button("Generate"):
     with st.spinner("Generating image..."):
-        result = pipe(prompt, num_inference_steps=25, guidance_scale=7.5)
-        image = result.images[0]
-        st.image(image, caption="Generated Image", use_column_width=True)
-        image.save("image.png")
+        try:
+            result = pipe(prompt, num_inference_steps=30, guidance_scale=7.5)
+            image = result.images[0]
+            st.image(image, caption="Generated Image", use_column_width=True)
+            image.save("image.png")
+            st.success("Image saved as image.png")
+        except Exception as e:
+            st.error(f"❌ Error during generation: {str(e)}")
